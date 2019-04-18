@@ -59,27 +59,30 @@ def run(words, version=1, level='H', picture=None, colorized=False, contrast=1.0
         bg0 = ImageEnhance.Contrast(bg0).enhance(contrast)
         bg0 = ImageEnhance.Brightness(bg0).enhance(brightness)
 
+        unit_len = 30
+        margin = 4*unit_len
+        print(qr.size)
         if bg0.size[0] < bg0.size[1]:
-            bg0 = bg0.resize((qr.size[0]-24, (qr.size[0]-24)*int(bg0.size[1]/bg0.size[0])))
+            bg0 = bg0.resize((qr.size[0]-margin*2, (qr.size[0]-margin*2)*int(bg0.size[1]/bg0.size[0])))
         else:
-            bg0 = bg0.resize(((qr.size[1]-24)*int(bg0.size[0]/bg0.size[1]), qr.size[1]-24))    
+            bg0 = bg0.resize(((qr.size[1]-margin*2)*int(bg0.size[0]/bg0.size[1]), qr.size[1]-margin*2))    
             
         bg = bg0 if colorized else bg0.convert('1')
         
-        aligs = []
+        aligs = dict()
         if ver > 1:
             aloc = alig_location[ver-2]
             for a in range(len(aloc)):
                 for b in range(len(aloc)):
                     if not ((a==b==0) or (a==len(aloc)-1 and b==0) or (a==0 and b==len(aloc)-1)):
-                        for i in range(3*(aloc[a]-2), 3*(aloc[a]+3)):
-                            for j in range(3*(aloc[b]-2), 3*(aloc[b]+3)):
-                                aligs.append((i,j))
+                        for i in range(unit_len*(aloc[a]-2), unit_len*(aloc[a]+unit_len)):
+                            for j in range(unit_len*(aloc[b]-2), unit_len*(aloc[b]+unit_len)):
+                                aligs[(i,j)] = True
 
-        for i in range(qr.size[0]-24):
-            for j in range(qr.size[1]-24):
-                if not ((i in (18,19,20)) or (j in (18,19,20)) or (i<24 and j<24) or (i<24 and j>qr.size[1]-49) or (i>qr.size[0]-49 and j<24) or ((i,j) in aligs) or (i%3==1 and j%3==1) or (bg0.getpixel((i,j))[3]==0)):
-                    qr.putpixel((i+12,j+12), bg.getpixel((i,j)))
+        for i in range(qr.size[0]-margin*2):
+            for j in range(qr.size[1]-margin*2):
+                if not ((i >= 6*unit_len and i < 7*unit_len) or (j >= 6*unit_len and j < 7*unit_len) or (i<margin and j<margin) or (i<margin and j>=qr.size[1]-margin*2) or (i>=qr.size[0]-margin*2 and j<margin) or aligs.get((i,j)) or ((i%unit_len)//(unit_len/3)==1 and (j%unit_len)//(unit_len/3)==1) or (bg0.getpixel((i,j))[3]!=255)):
+                    qr.putpixel((i+margin,j+margin), bg.getpixel((i,j)))
         
         qr_name = os.path.join(save_dir, os.path.splitext(os.path.basename(bg_name))[0] + '_qrcode.png') if not save_name else os.path.join(save_dir, save_name)
         qr.resize((qr.size[0]*3, qr.size[1]*3)).save(qr_name)
